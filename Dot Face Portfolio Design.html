@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>your name</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #fff; overflow: hidden; cursor: none; }
+  canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+  #cursor {
+    position: fixed; width: 5px; height: 5px;
+    background: #000; border-radius: 50%;
+    pointer-events: none; transform: translate(-50%,-50%);
+    z-index: 9999;
+  }
+  .corner {
+    position: fixed;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10px; font-weight: 300;
+    letter-spacing: .24em; text-transform: uppercase;
+    color: rgba(0,0,0,.28); pointer-events: none;
+    opacity: 0; transition: opacity 2s;
+  }
+  #c-tl { top: 40px; left: 48px; }
+  #c-tr { top: 40px; right: 48px; text-align: right; }
+  #c-bl { bottom: 40px; left: 48px; }
+  #c-br { bottom: 40px; right: 48px; text-align: right; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="cursor"></div>
+<div class="corner" id="c-tl">your name</div>
+<div class="corner" id="c-tr">2026</div>
+<div class="corner" id="c-bl">designer &amp; developer</div>
+<div class="corner" id="c-br">portfolio</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const cur    = document.getElementById('cursor');
+
+let W, H, CX, CY, SC;
+const mouse = { x: null, y: null };
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  CX = W / 2; CY = H / 2;
+  SC = Math.min(W, H) * 0.40;
+}
+resize();
+window.addEventListener('resize', () => { resize(); init(); });
+
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX; mouse.y = e.clientY;
+  cur.style.left = e.clientX + 'px';
+  cur.style.top  = e.clientY + 'px';
+});
+window.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+window.addEventListener('touchmove', e => {
+  mouse.x = e.touches[0].clientX;
+  mouse.y = e.touches[0].clientY;
+}, { passive: true });
+
+// ─────────────────────────────────────────────────────────────────────
+// FACE SEED GENERATOR
+// Dense clusters per region. Eyes + nose get larger dots to stand out.
+// ─────────────────────────────────────────────────────────────────────
+function buildSeeds() {
+  const s = [];
+
+  function add(bx, by, n, sx, sy, r0, r1) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = Math.pow(Math.random(), .42);
+      s.push({
+        nx: bx + Math.cos(a) * d * sx,
+        ny: by + Math.sin(a) * d * sy,
+        r:  r0 + Math.random() * (r1 - r0)
+      });
+    }
+  }
+
+  // HEAD MASS — very dense, fills silhouette completely
+  add(  0,    .00, 200, .70, .88,  2.0,  7.0);
+  add(  0,    .00,  80, .52, .65,  1.8,  5.5); // interior density
+  add(  0,   -.08,  60, .60, .75,  1.8,  5.5); // upper interior
+  add(  0,    .15,  50, .55, .60,  1.8,  5.5); // lower interior
+
+  // FOREHEAD
+  add(  0,   -.50,  30, .40, .20,  1.8,  5.5);
+  add(  0,   -.36,  22, .48, .12,  1.8,  5.0);
+
+  // EYEBROWS — bold, thick
+  add(-.33,  -.37,  26, .23, .07,  3.5,  9.5);
+  add( .33,  -.37,  26, .23, .07,  3.5,  9.5);
+  add(-.38,  -.34,  10, .10, .05,  3.0,  8.0); // outer brow
+  add( .38,  -.34,  10, .10, .05,  3.0,  8.0);
+
+  // EYE SOCKETS — LARGE dots, very prominent
+  add(-.30,  -.18,  28, .19, .12,  6.0, 13.0); // left eye — BIG
+  add( .30,  -.18,  28, .19, .12,  6.0, 13.0); // right eye — BIG
+  add(-.30,  -.18,  16, .13, .08,  3.5,  7.0); // left eye fill
+  add( .30,  -.18,  16, .13, .08,  3.5,  7.0); // right eye fill
+
+  // NOSE — large dots on bridge and base to read clearly
+  add(  0,    .06,  16, .06, .20,  5.0, 11.0); // nose bridge — LARGE
+  add(  0,    .23,  20, .17, .09,  5.5, 12.0); // nose base — LARGEST
+  add(-.14,   .27,  10, .07, .07,  4.0,  9.0); // left nostril
+  add( .14,   .27,  10, .07, .07,  4.0,  9.0); // right nostril
+  add(-.09,   .16,   8, .05, .10,  3.5,  8.0); // left nose wall
+  add( .09,   .16,   8, .05, .10,  3.5,  8.0); // right nose wall
+
+  // UNDER-EYE / CHEEKBONE
+  add(-.28,  -.04,  12, .12, .08,  2.5,  6.5);
+  add( .28,  -.04,  12, .12, .08,  2.5,  6.5);
+
+  // MOUTH
+  add(  0,    .41,  10, .19, .05,  3.0,  7.5); // upper lip
+  add(  0,    .48,  24, .27, .09,  3.5,  9.0); // mouth main
+  add(  0,    .56,   8, .16, .05,  2.5,  6.5); // lower lip
+
+  // PHILTRUM
+  add(  0,    .33,   7, .05, .07,  3.0,  7.5);
+
+  // CHIN
+  add(  0,    .68,  22, .28, .16,  2.2,  8.0);
+  add(  0,    .81,  12, .20, .09,  2.0,  6.5);
+
+  // CHEEKS
+  add(-.44,   .13,  20, .16, .20,  2.0,  7.0);
+  add( .44,   .13,  20, .16, .20,  2.0,  7.0);
+  add(-.40,   .30,  16, .14, .18,  2.0,  6.5);
+  add( .40,   .30,  16, .14, .18,  2.0,  6.5);
+
+  // JAWLINE
+  add(-.40,   .49,  18, .13, .17,  2.0,  7.0);
+  add( .40,   .49,  18, .13, .17,  2.0,  7.0);
+  add(-.26,   .63,  12, .11, .11,  2.0,  6.5);
+  add( .26,   .63,  12, .11, .11,  2.0,  6.5);
+
+  // TEMPLES / SIDES
+  add(-.60,  -.26,  16, .12, .18,  2.0,  6.5);
+  add( .60,  -.26,  16, .12, .18,  2.0,  6.5);
+  add(-.62,   .06,  14, .10, .16,  2.0,  6.0);
+  add( .62,   .06,  14, .10, .16,  2.0,  6.0);
+
+  // HAIR
+  add(  0,   -.77,  20, .38, .12,  2.0,  6.0);
+  add(-.22,  -.73,  14, .22, .10,  1.8,  5.5);
+  add( .22,  -.73,  14, .22, .10,  1.8,  5.5);
+  add(-.42,  -.61,  10, .15, .10,  1.8,  5.0);
+  add( .42,  -.61,  10, .15, .10,  1.8,  5.0);
+
+  // NECK
+  add(  0,    .91,  16, .16, .12,  2.0,  7.0);
+  add(  0,   1.02,  10, .14, .08,  2.0,  6.0);
+
+  // DEAD-ZONE FILLERS — eliminate any gaps
+  add(-.16,  -.08,  14, .09, .14,  1.8,  5.5);
+  add( .16,  -.08,  14, .09, .14,  1.8,  5.5);
+  add(  0,   -.12,  12, .07, .10,  1.8,  5.0);
+  add(-.50,  -.08,  12, .09, .20,  1.8,  6.0);
+  add( .50,  -.08,  12, .09, .20,  1.8,  6.0);
+  add(  0,    .78,   8, .22, .08,  2.0,  6.0);
+  add(-.20,   .72,   8, .10, .10,  2.0,  6.0);
+  add( .20,   .72,   8, .10, .10,  2.0,  6.0);
+
+  return s;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// PARTICLES
+// ─────────────────────────────────────────────────────────────────────
+let P = [];
+
+function init() {
+  const seeds = buildSeeds();
+  P = seeds.map(s => ({
+    nx: s.nx, ny: s.ny, r: s.r,
+    x:  Math.random() * W,
+    y:  Math.random() * H,
+    vx: (Math.random() - .5) * 5,
+    vy: (Math.random() - .5) * 5,
+    phase: Math.random() * Math.PI * 2,
+    tx: 0, ty: 0
+  }));
+}
+init();
+
+// Spatial grid
+function buildGrid(cell) {
+  const g = {};
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i];
+    const k = (Math.floor(p.x / cell) * 100000 + Math.floor(p.y / cell)) | 0;
+    if (!g[k]) g[k] = [];
+    g[k].push(i);
+  }
+  return g;
+}
+function neighbors(g, x, y, cell) {
+  const gx = Math.floor(x / cell) | 0;
+  const gy = Math.floor(y / cell) | 0;
+  const r = [];
+  for (let dx = -1; dx <= 1; dx++)
+    for (let dy = -1; dy <= 1; dy++) {
+      const k = (gx + dx) * 100000 + (gy + dy);
+      if (g[k]) for (let n of g[k]) r.push(n);
+    }
+  return r;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// EYE PUPILS — sight tracking, ONLY these move toward cursor
+// ─────────────────────────────────────────────────────────────────────
+const leftEyeN  = { nx: -.30, ny: -.18 };
+const rightEyeN = { nx:  .30, ny: -.18 };
+let lp = { x: 0, y: 0 }, rp = { x: 0, y: 0 }; // pupil positions
+let lpInit = false;
+
+// ─────────────────────────────────────────────────────────────────────
+// LOOP
+// ─────────────────────────────────────────────────────────────────────
+let t0 = null;
+const DELAY = 350, DUR = 2200;
+let assembled = false;
+
+function frame(ts) {
+  if (!t0) t0 = ts;
+  const el = ts - t0;
+  let prog = 0;
+  if (el > DELAY) {
+    prog = Math.min((el - DELAY) / DUR, 1);
+    prog = 1 - Math.pow(1 - prog, 3);
+  }
+
+  if (prog >= 1 && !assembled) {
+    assembled = true;
+    document.querySelectorAll('.corner').forEach(e => e.style.opacity = '1');
+  }
+
+  // Static face targets — face does NOT move
+  for (let i = 0; i < P.length; i++) {
+    P[i].tx = CX + P[i].nx * SC;
+    P[i].ty = CY + P[i].ny * SC;
+  }
+
+  // Eye world positions
+  const leX = CX + leftEyeN.nx  * SC;
+  const leY = CY + leftEyeN.ny  * SC;
+  const reX = CX + rightEyeN.nx * SC;
+  const reY = CY + rightEyeN.ny * SC;
+
+  if (!lpInit) { lp.x = leX; lp.y = leY; rp.x = reX; rp.y = reY; lpInit = true; }
+
+  // Max travel for pupils inside eye socket
+  const eyeTravel = SC * 0.07;
+
+  if (mouse.x !== null && assembled) {
+    const ldx = mouse.x - leX, ldy = mouse.y - leY;
+    const ld  = Math.sqrt(ldx * ldx + ldy * ldy) || 1;
+    const lt  = Math.min(ld, eyeTravel) / ld;
+    lp.x += (leX + ldx * lt - lp.x) * .08;
+    lp.y += (leY + ldy * lt - lp.y) * .08;
+
+    const rdx = mouse.x - reX, rdy = mouse.y - reY;
+    const rd  = Math.sqrt(rdx * rdx + rdy * rdy) || 1;
+    const rt  = Math.min(rd, eyeTravel) / rd;
+    rp.x += (reX + rdx * rt - rp.x) * .08;
+    rp.y += (reY + rdy * rt - rp.y) * .08;
+  } else {
+    lp.x += (leX - lp.x) * .04; lp.y += (leY - lp.y) * .04;
+    rp.x += (reX - rp.x) * .04; rp.y += (reY - rp.y) * .04;
+  }
+
+  // Physics
+  const CELL = 20;
+  const grid = buildGrid(CELL);
+  const CR = 62, CF = 310;
+
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i];
+
+    // Spring — tight pull to face target
+    const k = assembled ? .030 : .052;
+    p.vx += (p.tx - p.x) * k;
+    p.vy += (p.ty - p.y) * k;
+
+    // Cursor repulsion
+    if (mouse.x !== null) {
+      const dx = p.x - mouse.x, dy = p.y - mouse.y;
+      const d2 = dx * dx + dy * dy;
+      const cr = CR + p.r;
+      if (d2 < cr * cr && d2 > .01) {
+        const d = Math.sqrt(d2);
+        const f = CF * (1 - d / cr) / d;
+        p.vx += dx * f * .016;
+        p.vy += dy * f * .016;
+      }
+    }
+
+    // Collisions — single layer, no overlap
+    const nb = neighbors(grid, p.x, p.y, CELL);
+    for (let j = 0; j < nb.length; j++) {
+      const ni = nb[j];
+      if (ni <= i) continue;
+      const q = P[ni];
+      const dx = p.x - q.x, dy = p.y - q.y;
+      const d2 = dx * dx + dy * dy;
+      const md = p.r + q.r + .6;
+      if (d2 < md * md && d2 > .001) {
+        const d  = Math.sqrt(d2);
+        const ov = md - d;
+        const nx = dx / d, ny = dy / d;
+        const mr = q.r * q.r / (p.r * p.r + q.r * q.r);
+        const push = ov * .42;
+        p.vx += nx * push * mr;        p.vy += ny * push * mr;
+        q.vx -= nx * push * (1 - mr); q.vy -= ny * push * (1 - mr);
+        const dvx = p.vx - q.vx, dvy = p.vy - q.vy;
+        const dot = dvx * nx + dvy * ny;
+        if (dot < 0) {
+          const imp = dot * .24;
+          p.vx -= imp * nx * mr;        p.vy -= imp * ny * mr;
+          q.vx += imp * nx * (1 - mr); q.vy += imp * ny * (1 - mr);
+        }
+      }
+    }
+
+    // Micro-drift — alive but subtle
+    if (assembled) {
+      p.vx += Math.sin(ts * .00055 + p.phase) * .040;
+      p.vy += Math.cos(ts * .00068 + p.phase * 1.6) * .040;
+    }
+
+    p.vx *= assembled ? .88 : .80;
+    p.vy *= assembled ? .88 : .80;
+    p.x  += p.vx;
+    p.y  += p.vy;
+  }
+
+  // ── DRAW ────────────────────────────────────────────────────────
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+
+  const alpha = prog < .06 ? 0 : Math.min((prog - .06) / .28, 1);
+  ctx.fillStyle = `rgba(0,0,0,${(alpha * .93).toFixed(3)})`;
+
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i];
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Pupils — drawn on top, move with gaze
+  if (assembled && alpha > .9) {
+    const pR = SC * 0.030;
+    ctx.fillStyle = 'rgba(0,0,0,.98)';
+    ctx.beginPath(); ctx.arc(lp.x, lp.y, pR, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(rp.x, rp.y, pR, 0, Math.PI * 2); ctx.fill();
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
