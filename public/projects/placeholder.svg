@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#ffffff"/>
+  <g fill="#000000">
+    <circle cx="372" cy="270" r="11"/>
+    <circle cx="428" cy="270" r="11"/>
+  </g>
+  <text x="400" y="360" text-anchor="middle" font-family="Times New Roman, serif" font-size="22" fill="rgba(0,0,0,0.32)" letter-spacing="6">PROJECT IMAGE</text>
+  <text x="400" y="392" text-anchor="middle" font-family="Times New Roman, serif" font-size="12" fill="rgba(0,0,0,0.26)" letter-spacing="5">CREATED BY CHOCHE</text>
+  <rect x="0.5" y="0.5" width="799" height="599" fill="none" stroke="rgba(0,0,0,0.12)"/>
+</svg>

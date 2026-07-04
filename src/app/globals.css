@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background: #ffffff;
+  color: #000000;
+  font-family: "Times New Roman", var(--font-tinos), Times, serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Custom dot cursor over the hero — only where a real pointer exists. */
+@media (pointer: fine) {
+  .hero-zone {
+    cursor: none;
+  }
+}
+
+/* Selection stays monochrome. */
+::selection {
+  background: #000;
+  color: #fff;
+}
+
+/* Visible focus for keyboard users, in pure black. */
+:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
