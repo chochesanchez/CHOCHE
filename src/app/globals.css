@@ -6,14 +6,13 @@
   color-scheme: light;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+/* Single-viewport app — the page itself never scrolls; panels scroll inside. */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
@@ -22,14 +21,7 @@ body {
   font-family: "Times New Roman", var(--font-tinos), Times, serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
-}
-
-/* Custom dot cursor over the hero — only where a real pointer exists. */
-@media (pointer: fine) {
-  .hero-zone {
-    cursor: none;
-  }
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Selection stays monochrome. */

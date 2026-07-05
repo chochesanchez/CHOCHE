@@ -1,102 +1,67 @@
-import type { Localized } from "@/i18n/types";
-
 export interface Place {
   /** Must match the `name` property in world-atlas countries-110m.json. */
   geoName: string;
-  country: Localized;
+  country: string;
   home?: boolean;
   cities: string[];
 }
 
 /**
  * Visited countries. `geoName` is the join key to the topojson feature.
- * Monaco and Vatican are sovereign but too small to render at 110m, so per the
- * brief they're folded into France / Italy as cities.
+ * Monaco and Vatican are sovereign but too small to render at 110m, so they're
+ * folded into France / Italy as cities.
  */
 export const PLACES: Place[] = [
   {
     geoName: "Mexico",
     home: true,
-    country: { en: "Mexico", es: "México", fr: "Mexique" },
+    country: "México",
     cities: [
-      "Monterrey", "Torreón", "Veracruz", "Mérida", "Cancún",
-      "Puerto Vallarta", "Puerto Escondido", "Chiapas", "Mexico City",
-      "San Miguel de Allende", "Pátzcuaro", "Morelia", "Puerto Morelos",
-      "Isla Mujeres", "Holbox", "Playa del Carmen", "Valle de Bravo",
-      "Tulum", "Mazatlán", "Parras",
+      "Monterrey", "Mexico City", "Cancún", "Tulum", "Puerto Vallarta",
+      "Mérida", "Chiapas", "Puerto Escondido", "Mazatlán", "Holbox",
+      "Isla Mujeres", "San Miguel de Allende", "Morelia", "Pátzcuaro",
+      "Valle de Bravo", "Parras",
     ],
   },
   {
     geoName: "United States of America",
-    country: { en: "United States", es: "Estados Unidos", fr: "États-Unis" },
+    country: "United States",
     cities: [
       "Los Angeles", "Las Vegas", "New York", "Orlando",
-      "Dallas", "Houston", "Washington (Texas)",
+      "Dallas", "Houston", "Washington",
     ],
   },
-  {
-    geoName: "Canada",
-    country: { en: "Canada", es: "Canadá", fr: "Canada" },
-    cities: ["Montreal", "Quebec"],
-  },
-  {
-    geoName: "Costa Rica",
-    country: { en: "Costa Rica", es: "Costa Rica", fr: "Costa Rica" },
-    cities: [],
-  },
-  {
-    geoName: "Guatemala",
-    country: { en: "Guatemala", es: "Guatemala", fr: "Guatemala" },
-    cities: [],
-  },
-  {
-    geoName: "Spain",
-    country: { en: "Spain", es: "España", fr: "Espagne" },
-    cities: ["Madrid", "Barcelona"],
-  },
+  { geoName: "Canada", country: "Canada", cities: ["Montreal", "Quebec"] },
+  { geoName: "Costa Rica", country: "Costa Rica", cities: [] },
+  { geoName: "Guatemala", country: "Guatemala", cities: [] },
+  { geoName: "Spain", country: "Spain", cities: ["Madrid", "Barcelona"] },
   {
     geoName: "France",
-    country: { en: "France", es: "Francia", fr: "France" },
-    cities: ["Paris", "Cannes", "Menton", "Nice", "Monaco"],
+    country: "France",
+    cities: ["Paris", "Nice", "Cannes", "Menton", "Monaco"],
   },
   {
     geoName: "Italy",
-    country: { en: "Italy", es: "Italia", fr: "Italie" },
+    country: "Italy",
     cities: [
-      "Milan", "Rome", "Florence", "Amalfi",
-      "Venice", "Bergamo", "Capri", "Vatican City",
+      "Milan", "Rome", "Florence", "Venice",
+      "Amalfi", "Capri", "Bergamo", "Vatican City",
     ],
   },
   {
     geoName: "Croatia",
-    country: { en: "Croatia", es: "Croacia", fr: "Croatie" },
+    country: "Croatia",
     cities: ["Split", "Dubrovnik", "Zagreb"],
   },
-  {
-    geoName: "Greece",
-    country: { en: "Greece", es: "Grecia", fr: "Grèce" },
-    cities: ["Athens", "Mykonos"],
-  },
-  {
-    geoName: "Turkey",
-    country: { en: "Turkey", es: "Turquía", fr: "Turquie" },
-    cities: ["Istanbul"],
-  },
+  { geoName: "Greece", country: "Greece", cities: ["Athens", "Mykonos"] },
+  { geoName: "Turkey", country: "Türkiye", cities: ["Istanbul"] },
   {
     geoName: "Switzerland",
-    country: { en: "Switzerland", es: "Suiza", fr: "Suisse" },
-    cities: ["Crans-Montana", "Zurich", "Zinal"],
+    country: "Switzerland",
+    cities: ["Zürich", "Crans-Montana", "Zinal"],
   },
-  {
-    geoName: "Netherlands",
-    country: { en: "Netherlands", es: "Países Bajos", fr: "Pays-Bas" },
-    cities: ["Amsterdam"],
-  },
-  {
-    geoName: "United Kingdom",
-    country: { en: "United Kingdom", es: "Reino Unido", fr: "Royaume-Uni" },
-    cities: ["London"],
-  },
+  { geoName: "Netherlands", country: "Netherlands", cities: ["Amsterdam"] },
+  { geoName: "United Kingdom", country: "United Kingdom", cities: ["London"] },
 ];
 
 /** Fast lookup by topojson feature name. */

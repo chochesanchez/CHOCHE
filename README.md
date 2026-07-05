@@ -1,9 +1,10 @@
 # CHOCHE — Portfolio
 
-Personal portfolio of **José Manuel Sánchez Pérez — CHOCHE**. A minimal, editorial,
-black-and-white site in Times New Roman, with one unforgettable signature: a face
-made of dots that assembles, watches your cursor, and — on scroll — collapses so its
-two eyes become the two dots of the CHOCHE logo.
+Personal portfolio of **José Manuel Sánchez Pérez — CHOCHE**. A maximally minimal,
+editorial, black-and-white site in Times New Roman. It opens on one screen: hundreds
+of black dots, always alive, assembled into the **CHOCHE logo** — two circles you can
+push with your cursor or drag with your finger. The big footer nav navigates by
+**slowly dissolving** the logo away and fading a panel in — no reloads, no scrolling.
 
 The site is the proof of work.
 
@@ -16,18 +17,51 @@ The site is the proof of work.
 - **HTML5 Canvas** for the hero (`DotFace.tsx`) — no animation libraries
 - **react-simple-maps** + **world-atlas** topojson for the world map
 - **next/font** (Tinos) as the self-hosted serif fallback for Times New Roman
-- Deploys on **Vercel**, 100% static / front-end only
+- English only — no i18n. Deploys on **Vercel**, 100% static / front-end.
 
 ## Run it
 
 ```bash
 npm install
 npm run dev      # http://localhost:3000
-npm run build    # production build
-npm run start    # serve the production build
+npm run build && npm run start
 ```
 
 Node 18+ recommended.
+
+---
+
+## How it works
+
+One non-scrolling viewport (`App.tsx`) with a single `mode` state: `"home"` or one
+of the three sections.
+
+- **Home** — `DotFace` assembles ~880 dots into the two circles of the logo,
+  **horizontal at every size** (smaller on mobile, never stacked). They're never
+  static: perpetual micro-drift + collision jitter keep them breathing, the cursor
+  repels them, and a finger drags them on touch.
+- **Footer nav** — big, uppercase `ABOUT · TIMELINE · MAP`. Selecting one **slowly**
+  disperses the dots and fades them out (~2s) while the panel **dissolves in** (~1.5s).
+  No routing — it's all one page, all state.
+- **Home button** — a small two-dot logo (top-left) appears only inside a section;
+  on home the big dots already are the logo. It, and the `CHOCHE` wordmark (top-right),
+  return home and slowly reassemble the dots.
+
+All transitions are deliberately slow and eased — nothing abrupt.
+
+**Sections**
+- **About** — first-person bio, philosophy, what I do, quick facts, and contact.
+- **Timeline** — image-led, newest (2026) at the top → oldest (2003) at the bottom.
+  Each row is a big year + one big uppercase word + an image (placeholder for now).
+- **Map** — the interactive world map: 14 visited countries filled black, cities on
+  hover/tap.
+
+**Accessibility.** With `prefers-reduced-motion: reduce`, the logo is drawn once,
+static; panels still fade gently. All content and contact stay reachable, focus is
+visible, palette is pure black & white.
+
+**Performance.** `devicePixelRatio` capped at 2, fewer dots on mobile, and `rAF`
+naturally pauses on hidden tabs.
 
 ---
 
@@ -36,101 +70,53 @@ Node 18+ recommended.
 ```
 src/
 ├── app/
-│   ├── layout.tsx        # fonts, metadata, LanguageProvider, base B/W
-│   ├── page.tsx          # single page: NavBar + Hero + sections
-│   └── globals.css       # Tailwind + base styles, custom cursor, focus rings
+│   ├── layout.tsx            # fonts, metadata, base B/W
+│   ├── page.tsx              # renders <App />
+│   └── globals.css           # single-viewport, no page scroll
 ├── components/
-│   ├── hero/
-│   │   ├── DotFace.tsx    # canvas physics + the scroll→logo brand reveal
-│   │   ├── HeroLabels.tsx # corner labels + scroll hint
-│   │   └── Hero.tsx       # wires the canvas + the 100vh scroll spacer
+│   ├── App.tsx               # mode state + orchestration
+│   ├── hero/DotFace.tsx      # canvas: dense dots → CHOCHE logo, alive + interactive
 │   ├── nav/
-│   │   ├── NavBar.tsx     # sticky nav; logo = the collapsed face
-│   │   └── LanguageSwitcher.tsx
-│   ├── sections/         # Myself · Work · Projects · WorldMap · Info
-│   └── ui/               # ImageFrame (grayscale→color), Reveal, SectionHeading
-├── data/                # projects · work · places · contact · myself  ← edit here
-├── i18n/                # LanguageProvider + EN/ES/FR dictionaries
-└── lib/                 # useScrollProgress, brand geometry constants
+│   │   ├── FooterNav.tsx      # big uppercase ABOUT · TIMELINE · MAP
+│   │   └── CornerBrand.tsx    # CHOCHE wordmark + section home-button logo
+│   ├── sections/
+│   │   ├── About.tsx
+│   │   ├── Timeline.tsx       # year + big word + image
+│   │   └── WorldMap.tsx       # react-simple-maps world map
+│   └── ui/
+│       ├── Panel.tsx          # slow dissolve-in panel chrome
+│       └── ImageFrame.tsx     # next/image grayscale → color on hover
+├── data/                      # about · timeline · places · contact   ← edit here
+└── lib/                       # hooks (reduced motion) + brand constants
 ```
 
 ---
 
 ## Editing content
 
-All copy and data live in **`src/data/`** — no need to touch components.
+All copy and data live in **`src/data/`** — plain English, no components to touch.
 
-- **`projects.ts`** — projects + the "coming soon" slots (CASHINO, apparel)
-- **`work.ts`** — work history
+- **`about.ts`** — bio (first person), philosophy, interests, facts
+- **`timeline.ts`** — timeline rows (`year`, `word`, `image`, `caption`)
 - **`places.ts`** — visited countries & cities for the map
-- **`contact.ts`** — email + social links
-- **`myself.ts`** — bio, philosophy, quick facts
-
-Translatable prose is stored as `{ en, es, fr }` objects. Add or change a language
-string in all three (English is the fallback). UI chrome strings (nav, buttons,
-section titles) live in **`src/i18n/dictionaries.ts`**.
-
-### Languages
-
-The site is **English-first** with a global **EN / ES / FR** switcher (top-right of
-the nav). The choice persists in `localStorage` and, on a first visit, is inferred
-from the browser language.
-
-### Replacing the placeholder images
-
-Every image currently points at a placeholder SVG in `/public`:
-
-- `public/portrait-placeholder.svg` — used in **Myself** and **Info**
-- `public/projects/placeholder.svg` — used by every project card
-
-Drop the real photos into `/public` (JPG/PNG is fine) and update the `src` /
-`image` fields in `Myself.tsx`, `Info.tsx`, and `projects.ts`. Images render through
-`ImageFrame`, which applies the grayscale → color-on-hover treatment and a fixed
-aspect ratio to avoid layout shift.
+- **`contact.ts`** — email + social links (shown at the bottom of About)
 
 ### Still to fill in (see `// TODO(choche)`)
 
-- **Contact email** — `EMAIL` in `src/data/contact.ts`. Set `EMAIL_IS_PLACEHOLDER`
-  to `false` once real, and the mailto CTA + copy-email button light up.
-- **Project links** for BALANCE, FARO, KafeCam (App Store / demo / GitHub).
-- **Real images** as above.
-
----
-
-## How the dot face works
-
-`DotFace.tsx` is a client component driving an HTML5 canvas in three phases:
-
-1. **Assembly** — ~900 dots (fewer on mobile) fly in from random positions and
-   spring into face regions (eyes, nose, mouth, jaw, hair…) over ~2.2s.
-2. **Idle** — the face holds still and breathes (micro-drift); only the **pupils**
-   track the cursor; dots collide without overlapping (spatial-grid collisions) and
-   repel away from the pointer like a force field.
-3. **Scroll → logo (brand reveal)** — as you scroll the first viewport, the whole
-   face scales down and travels to the top-left nav slot; non-eye dots migrate into
-   the two eyes and fade, and the eyes tighten into **two solid dots — the logo.**
-   The canvas dots fade out right as the crisp DOM logo in the nav takes over, so
-   the handoff is seamless. Clicking the logo returns to the top and re-expands the
-   face.
-
-Geometry shared between the canvas and the DOM logo lives in `src/lib/brand.ts`, so
-the eyes always land exactly on the nav logo.
-
-**Accessibility.** With `prefers-reduced-motion: reduce`, the face is drawn once,
-already assembled and static — no physics, no hidden cursor, no scroll transition —
-and the nav is shown immediately. All content and contact remain reachable, every
-image has `alt` text, focus is visible, and the palette is pure black & white.
-
-**Performance.** `devicePixelRatio` is capped at 2, mobile renders ~half the dots,
-and the animation loop skips work once the hero is scrolled out of view.
+- **Contact email** — `EMAIL` in `src/data/contact.ts`; set `EMAIL_IS_PLACEHOLDER`
+  to `false` to light up the mailto CTA + copy button in About.
+- **Timeline images** — one per row; drop real files in `/public` and point each
+  entry's `image` at it. You can also change any `word` or add entries (e.g. KafeCam)
+  with their real year.
+- **Portrait / project images** — the About and Timeline frames use `ImageFrame`
+  (grayscale → color on hover); just swap the `src`.
 
 ---
 
 ## Deploy (Vercel)
 
-The repo (`chochesanchez/CHOCHE`) is connected to Vercel. Every push to `main`
-triggers a production deploy — no configuration needed (Next.js is auto-detected).
-For manual deploys: `npx vercel` / `npx vercel --prod`.
+The repo (`chochesanchez/CHOCHE`) is connected to Vercel — every push to `main`
+triggers a production deploy (Next.js auto-detected). Manual: `npx vercel --prod`.
 
 ---
 

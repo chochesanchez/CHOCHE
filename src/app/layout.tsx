@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Tinos } from "next/font/google";
-import { LanguageProvider } from "@/i18n/LanguageProvider";
 import "./globals.css";
 
 // Self-hosted at build time; the serif fallback when Times New Roman is absent.
@@ -57,9 +56,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={tinos.variable}>
-      <body>
-        <LanguageProvider>{children}</LanguageProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
